@@ -25,12 +25,6 @@ npm install # or pip install -r requirements.txt, etc.
 ```
 
 ## Usage
-Provide examples of how to use your project.
-
-```bash
-# Example command
-./run_script.sh
-```
 
 ## Features
 - Feature 1: Description
