@@ -23,9 +23,13 @@ export const extractContent = async (urls) => {
 };
 
 // Get answer to a question
-export const getAnswer = async (question, urls) => {
+export const getAnswer = async (question, urls, modelType = 'default') => {
   try {
-    const response = await apiClient.post('/answer', { question, urls });
+    const response = await apiClient.post('/answer', { 
+      question, 
+      urls,
+      model_type: modelType 
+    });
     return response.data;
   } catch (error) {
     console.error('API error when getting answer:', error);
@@ -33,7 +37,19 @@ export const getAnswer = async (question, urls) => {
   }
 };
 
+// Get available models
+export const getAvailableModels = async () => {
+  try {
+    const response = await apiClient.get('/models');
+    return response.data;
+  } catch (error) {
+    console.error('API error when getting available models:', error);
+    throw error;
+  }
+};
+
 export default {
   extractContent,
-  getAnswer
+  getAnswer,
+  getAvailableModels
 };
