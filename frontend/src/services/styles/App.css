@@ -1,0 +1,26 @@
+.App {
+    min-height: 100vh;
+    background-color: #f8f9fa;
+  }
+  
+  .card {
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .card-title {
+    font-weight: 600;
+  }
+  
+  .text-truncate {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Improve the look of confidence badges */
+  .badge {
+    font-weight: 500;
+    font-size: 0.8rem;
+  }
