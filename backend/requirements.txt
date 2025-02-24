@@ -1,0 +1,16 @@
+Flask==2.3.3
+flask-cors==4.0.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+html2text==2020.1.16
+python-dotenv==1.0.0
+lxml==4.9.3
+nltk==3.8.1
+scikit-learn>=1.0.0
+# Replace transformers with a simpler approach
+spacy>=3.5.0
+# Skip ML-heavy packages for now
+# --find-links https://download.pytorch.org/whl/torch_stable.html
+# torch==2.2.0+cpu
+# transformers==4.35.0
+# sentence-transformers==2.2.2
