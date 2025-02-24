@@ -119,12 +119,18 @@ class QuestionAnsweringModel:
                 score = 0
                 for ent in question_entities:
                     if ent.lower() in sent.text.lower():
-                        score += 1
+                        score += 1.5
                 
                 # Also check for keyword matches
                 for token in question_doc:
-                    if token.is_alpha and not token.is_stop and token.text.lower() in sent.text.lower():
-                        score += 0.5
+                    if token.is_alpha and not token.is_stop:
+                        # Give higher weight to subject and objects in the question
+                        if token.dep_ in ['nsubj', 'dobj', 'pobj']:
+                            if token.text.lower() in sent.text.lower():
+                                score += 1.0
+                        # Regular keywords
+                        elif token.text.lower() in sent.text.lower():
+                            score += 0.5
                 
                 if score > 0:
                     relevant_sentences.append((sent.text, score))
