@@ -1,3 +1,4 @@
+# Basic requirements
 Flask==2.3.3
 flask-cors==4.0.0
 requests==2.31.0
@@ -13,8 +14,10 @@ spacy>=3.5.0
 # Run: python -m spacy download en_core_web_md
 # For smaller model: python -m spacy download en_core_web_sm
 
-# Optional: DistilBERT dependencies (comment out if not using)
-# Install with: pip install -r requirements.txt
---find-links https://download.pytorch.org/whl/torch_stable.html
-torch==2.2.0+cpu
-transformers==4.35.0
+# TensorFlow-based model (more efficient than DistilBERT)
+tensorflow>=2.9.0
+tensorflow-hub>=0.12.0
+tensorflow-text>=2.9.0
+
+# Uncomment if you want to try the NLTK-only approach (no TensorFlow required)
+# No additional dependencies needed for NLTK model as nltk is already included above

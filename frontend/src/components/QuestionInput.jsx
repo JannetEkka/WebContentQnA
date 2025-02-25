@@ -88,6 +88,20 @@ const QuestionInput = ({
     }
   };
 
+  // Helper function to get button variant based on model type
+  const getModelButtonVariant = (modelKey) => {
+    switch(modelKey) {
+      case 'tensorflow': 
+        return 'outline-primary';
+      case 'nltk-advanced': 
+        return 'outline-success';
+      case 'distilbert': 
+        return 'outline-info';
+      default:
+        return 'outline-secondary';
+    }
+  };
+
   return (
     <Card className="shadow-sm">
       <Card.Body>
@@ -119,7 +133,7 @@ const QuestionInput = ({
                       key={key}
                       id={`model-${key}`}
                       value={key}
-                      variant={key === 'distilbert' ? 'outline-info' : 'outline-secondary'}
+                      variant={getModelButtonVariant(key)}
                       disabled={!model.available}
                     >
                       {model.name}

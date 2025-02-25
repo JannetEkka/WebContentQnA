@@ -16,13 +16,30 @@ const Answer = ({ answer }) => {
 
   // Helper function to get model badge color
   const getModelBadgeColor = (model) => {
-    return model === 'distilbert' ? 'info' : 'secondary';
+    switch(model) {
+      case 'tensorflow':
+        return 'primary';
+      case 'nltk-advanced':
+        return 'success';
+      case 'distilbert':
+        return 'info';
+      default:
+        return 'secondary';
+    }
   };
 
   // Helper function to get model display name
   const getModelDisplayName = (model) => {
-    if (model === 'distilbert') return 'DistilBERT';
-    return 'TF-IDF + spaCy';
+    switch(model) {
+      case 'tensorflow':
+        return 'TensorFlow USE';
+      case 'nltk-advanced':
+        return 'NLTK Advanced';
+      case 'distilbert':
+        return 'DistilBERT';
+      default:
+        return 'TF-IDF + spaCy';
+    }
   };
 
   // Format timestamp if available

@@ -10,7 +10,30 @@ const QuestionHistory = ({ history, onSelectQuestion }) => {
 
   // Helper function to get model badge color
   const getModelBadgeColor = (model) => {
-    return model === 'distilbert' ? 'info' : 'secondary';
+    switch(model) {
+      case 'tensorflow':
+        return 'primary';
+      case 'nltk-advanced':
+        return 'success';
+      case 'distilbert':
+        return 'info';
+      default:
+        return 'secondary';
+    }
+  };
+  
+  // Helper function to get model display name
+  const getModelDisplayName = (model) => {
+    switch(model) {
+      case 'tensorflow':
+        return 'TensorFlow';
+      case 'nltk-advanced':
+        return 'NLTK';
+      case 'distilbert':
+        return 'DistilBERT';
+      default:
+        return 'TF-IDF';
+    }
   };
 
   // Helper function to truncate question if too long
@@ -40,7 +63,7 @@ const QuestionHistory = ({ history, onSelectQuestion }) => {
                     <small className="text-muted">{formatTime(item.timestamp)}</small>
                   </div>
                   <Badge bg={getModelBadgeColor(item.model)}>
-                    {item.model === 'distilbert' ? 'DistilBERT' : 'TF-IDF'}
+                    {getModelDisplayName(item.model)}
                   </Badge>
                 </div>
               </ListGroup.Item>

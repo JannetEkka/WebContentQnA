@@ -65,11 +65,15 @@ class DistilBERTQuestionAnsweringModel:
     def _find_most_relevant_chunk(self, question, chunks):
         """Find the most relevant text chunk for the question using DistilBERT embeddings"""
         if not chunks:
+            self.logger.warning("No chunks to process!")
             return "", 0
             
         # If only one chunk, return it
         if len(chunks) == 1:
+            self.logger.info(f"Only one chunk available, returning it (length: {len(chunks[0])})")
             return chunks[0], 1.0
+    
+        self.logger.info(f"Finding most relevant chunk among {len(chunks)} chunks for question: '{question}'")
             
         try:
             # Tokenize question
@@ -84,6 +88,7 @@ class DistilBERTQuestionAnsweringModel:
             # Get embeddings for each chunk
             chunk_scores = []
             for chunk in chunks:
+                self.logger.debug(f"Processing chunk {i+1}/{len(chunks)} (length: {len(chunk)})")
                 chunk_tokens = self.tokenizer(chunk, return_tensors="pt", truncation=True, max_length=512)
                 chunk_tokens = {k: v.to(self.device) for k, v in chunk_tokens.items()}
                 
@@ -96,9 +101,13 @@ class DistilBERTQuestionAnsweringModel:
                     np.linalg.norm(question_embedding) * np.linalg.norm(chunk_embedding)
                 )
                 chunk_scores.append(similarity)
+                self.logger.debug(f"Chunk {i+1} similarity score: {similarity:.4f}")
             
             # Get the index of the most similar chunk
             most_similar_idx = np.argmax(chunk_scores)
+
+            self.logger.info(f"Selected chunk {most_similar_idx+1}/{len(chunks)} with score: {chunk_scores[most_similar_idx]:.4f}")
+            self.logger.info(f"Selected chunk preview: '{chunks[most_similar_idx][:100]}...'")
             
             return chunks[most_similar_idx], chunk_scores[most_similar_idx]
             
@@ -110,6 +119,8 @@ class DistilBERTQuestionAnsweringModel:
     def _extract_answer(self, question, text):
         """Extract the answer from the text based on the question using DistilBERT"""
         try:
+            self.logger.info(f"Extracting answer for question: '{question}'")
+            self.logger.info(f"Text length: {len(text)}")
             # Tokenize question and text
             inputs = self.tokenizer(
                 question, 
@@ -119,6 +130,9 @@ class DistilBERTQuestionAnsweringModel:
                 truncation=True
             )
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+            # Log tokenization info
+            self.logger.debug(f"Tokenized input length: {len(inputs['input_ids'][0])}")
             
             # Get model predictions
             with torch.no_grad():
@@ -131,17 +145,23 @@ class DistilBERTQuestionAnsweringModel:
             # Get the most likely start and end positions
             start_idx = torch.argmax(start_logits).item()
             end_idx = torch.argmax(end_logits).item()
+
+            self.logger.debug(f"Raw start_idx: {start_idx}, end_idx: {end_idx}")
             
             # Handle case where end is before start
             if end_idx < start_idx:
                 # Find next best end position
+                self.logger.warning(f"End index {end_idx} is before start index {start_idx}, finding next best end position")
                 end_logits[0, start_idx] = -100
                 end_idx = torch.argmax(end_logits).item()
+                self.logger.debug(f"Updated end_idx: {end_idx}")
             
             # Convert token positions to character positions
             input_ids = inputs["input_ids"][0].tolist()
             tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
             
+            self.logger.debug(f"Token span ({start_idx}, {end_idx}): {tokens[max(0, start_idx-5):start_idx]} [START] {tokens[start_idx:end_idx+1]} [END] {tokens[end_idx+1:min(len(tokens), end_idx+6)]}")
+
             # Extract answer
             answer_tokens = tokens[start_idx:end_idx+1]
             answer = self.tokenizer.convert_tokens_to_string(answer_tokens)
@@ -150,14 +170,21 @@ class DistilBERTQuestionAnsweringModel:
             confidence = (torch.softmax(start_logits, dim=1)[0, start_idx].item() + 
                           torch.softmax(end_logits, dim=1)[0, end_idx].item()) / 2
             
+            # Log extracted answer details
+            self.logger.info(f"Extracted raw answer: '{answer}'")
+            self.logger.info(f"Confidence score: {confidence:.4f}")
+            
             # Extract context (tokens around the answer)
             context_start = max(0, start_idx - 10)
             context_end = min(len(tokens), end_idx + 10)
             context_tokens = tokens[context_start:context_end]
             context = self.tokenizer.convert_tokens_to_string(context_tokens)
             
+            self.logger.info(f"Context: '{context}'")
+
             # If answer is empty or just punctuation/whitespace
             if not answer.strip() or answer.strip() in ".,;:!?-":
+                self.logger.warning("Answer is empty or just punctuation, returning fallback message")
                 return "I couldn't find a specific answer in the provided content.", 0.1, ""
             
             return answer, confidence, context
@@ -177,17 +204,22 @@ class DistilBERTQuestionAnsweringModel:
         Returns:
             tuple: (answer, confidence, context)
         """
+        self.logger.info(f"====== NEW QUESTION ======")
         self.logger.info(f"Answering question using DistilBERT: {question}")
         
         if not content or not question:
+            self.logger.warning("No content or question provided")
             return "No content available to answer this question.", 0.0, ""
         
         # Preprocess
         question = self._preprocess_text(question)
         content = self._preprocess_text(content)
+
+        self.logger.info(f"Content length after preprocessing: {len(content)}")
         
         # Split content into manageable chunks
         chunks = self._split_into_chunks(content)
+        self.logger.info(f"Split content into {len(chunks)} chunks")
         
         # Find most relevant chunk
         most_relevant_chunk, chunk_confidence = self._find_most_relevant_chunk(question, chunks)
@@ -197,5 +229,9 @@ class DistilBERTQuestionAnsweringModel:
         
         # Combine confidences
         confidence = (chunk_confidence + answer_confidence) / 2
+
+        self.logger.info(f"Final answer: '{answer}'")
+        self.logger.info(f"Final confidence: {confidence:.4f}")
+        self.logger.info(f"====== END QUESTION ======")
         
         return answer, confidence, context

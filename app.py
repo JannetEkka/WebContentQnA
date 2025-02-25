@@ -2,13 +2,25 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
 import os
-from services.extractor import ContentExtractor
-from services.processor import ContentProcessor
-from services.qa_model import QuestionAnsweringModel
+from backend.services.extractor import ContentExtractor
+from backend.services.processor import ContentProcessor
+from backend.services.qa_model import QuestionAnsweringModel
 
-# Optional import of DistilBERT model
+# Optional import of alternative models
 try:
-    from services.qa_model_distilbert import DistilBERTQuestionAnsweringModel
+    from backend.services.qa_model_tensorflow import TensorFlowQuestionAnsweringModel
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+
+try:
+    from backend.services.qa_model_nltk import NLTKQuestionAnsweringModel
+    NLTK_ADVANCED_AVAILABLE = True
+except ImportError:
+    NLTK_ADVANCED_AVAILABLE = False
+
+try:
+    from backend.services.qa_model_distilbert import DistilBERTQuestionAnsweringModel
     DISTILBERT_AVAILABLE = True
 except ImportError:
     DISTILBERT_AVAILABLE = False
@@ -20,6 +32,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Set up more detailed logging for the DistilBERT model
+distilbert_logger = logging.getLogger('backend.services.qa_model_distilbert')
+distilbert_logger.setLevel(logging.DEBUG)
+
+# Create a file handler for the distilbert logger
+distilbert_handler = logging.FileHandler('distilbert_debug.log')
+distilbert_handler.setLevel(logging.DEBUG)
+distilbert_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+distilbert_logger.addHandler(distilbert_handler)
+
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -28,6 +50,26 @@ CORS(app)  # Enable CORS for all routes
 extractor = ContentExtractor()
 processor = ContentProcessor()
 qa_model = QuestionAnsweringModel()
+
+# Initialize TensorFlow model if available
+tensorflow_model = None
+if TENSORFLOW_AVAILABLE:
+    try:
+        tensorflow_model = TensorFlowQuestionAnsweringModel()
+        logger.info("TensorFlow model initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize TensorFlow model: {str(e)}")
+        tensorflow_model = None
+
+# Initialize NLTK Advanced model if available
+nltk_model = None
+if NLTK_ADVANCED_AVAILABLE:
+    try:
+        nltk_model = NLTKQuestionAnsweringModel()
+        logger.info("NLTK Advanced model initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize NLTK Advanced model: {str(e)}")
+        nltk_model = None
 
 # Initialize DistilBERT model if available
 distilbert_model = None
@@ -95,7 +137,7 @@ def answer_question():
         data = request.json
         question = data.get('question', '')
         urls = data.get('urls', [])
-        model_type = data.get('model_type', 'default')  # 'default' or 'distilbert'
+        model_type = data.get('model_type', 'default')  # 'default', 'tensorflow', 'nltk-advanced', or 'distilbert'
         
         if not question:
             return jsonify({"error": "No question provided"}), 400
@@ -105,8 +147,14 @@ def answer_question():
         
         logger.info(f"Answering question using {model_type} model: {question}")
         
-        # Check if distilbert is requested but not available
-        if model_type == 'distilbert' and not distilbert_model:
+        # Check if requested model is available
+        if model_type == 'tensorflow' and not tensorflow_model:
+            logger.warning("TensorFlow model requested but not available, falling back to default model")
+            model_type = 'default'
+        elif model_type == 'nltk-advanced' and not nltk_model:
+            logger.warning("NLTK Advanced model requested but not available, falling back to default model")
+            model_type = 'default'
+        elif model_type == 'distilbert' and not distilbert_model:
             logger.warning("DistilBERT model requested but not available, falling back to default model")
             model_type = 'default'
         
@@ -130,7 +178,13 @@ def answer_question():
                     logger.error(f"Error extracting content from {url}: {str(e)}")
         
         # Get answer based on selected model
-        if model_type == 'distilbert' and distilbert_model:
+        if model_type == 'tensorflow' and tensorflow_model:
+            answer, confidence, context = tensorflow_model.answer_question(question, combined_content)
+            model_used = 'tensorflow'
+        elif model_type == 'nltk-advanced' and nltk_model:
+            answer, confidence, context = nltk_model.answer_question(question, combined_content)
+            model_used = 'nltk-advanced'
+        elif model_type == 'distilbert' and distilbert_model:
             answer, confidence, context = distilbert_model.answer_question(question, combined_content)
             model_used = 'distilbert'
         else:
@@ -157,9 +211,19 @@ def get_available_models():
             "description": "Lightweight model using TF-IDF and spaCy for efficient question answering",
             "available": True
         },
+        "tensorflow": {
+            "name": "Universal Sentence Encoder",
+            "description": "TensorFlow-based semantic model with excellent performance and medium resource usage",
+            "available": tensorflow_model is not None
+        },
+        "nltk-advanced": {
+            "name": "NLTK Advanced",
+            "description": "Enhanced NLTK model with advanced text processing and minimal resource requirements",
+            "available": nltk_model is not None
+        },
         "distilbert": {
             "name": "DistilBERT",
-            "description": "HuggingFace's DistilBERT model fine-tuned for question answering",
+            "description": "HuggingFace's DistilBERT model fine-tuned for question answering (resource intensive)",
             "available": distilbert_model is not None
         }
     }

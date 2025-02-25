@@ -1,0 +1,20 @@
+2025-02-25 10:02:06,749 - backend.services.qa_model_distilbert - INFO - Using device: cpu
+2025-02-25 10:02:08,212 - backend.services.qa_model_distilbert - INFO - Loaded DistilBERT model: distilbert-base-cased-distilled-squad
+2025-02-25 10:02:17,384 - backend.services.qa_model_distilbert - INFO - Using device: cpu
+2025-02-25 10:02:18,810 - backend.services.qa_model_distilbert - INFO - Loaded DistilBERT model: distilbert-base-cased-distilled-squad
+2025-02-25 10:03:28,869 - backend.services.qa_model_distilbert - INFO - ====== NEW QUESTION ======
+2025-02-25 10:03:28,869 - backend.services.qa_model_distilbert - INFO - Answering question using DistilBERT: what is machine learning?
+2025-02-25 10:03:28,869 - backend.services.qa_model_distilbert - INFO - Content length after preprocessing: 23500
+2025-02-25 10:03:28,869 - backend.services.qa_model_distilbert - INFO - Split content into 1 chunks
+2025-02-25 10:03:28,869 - backend.services.qa_model_distilbert - INFO - Only one chunk available, returning it (length: 23500)
+2025-02-25 10:03:28,869 - backend.services.qa_model_distilbert - INFO - Extracting answer for question: 'what is machine learning?'
+2025-02-25 10:03:28,869 - backend.services.qa_model_distilbert - INFO - Text length: 23500
+2025-02-25 10:03:28,902 - backend.services.qa_model_distilbert - DEBUG - Tokenized input length: 512
+2025-02-25 10:03:32,335 - backend.services.qa_model_distilbert - DEBUG - Raw start_idx: 36, end_idx: 41
+2025-02-25 10:03:32,335 - backend.services.qa_model_distilbert - DEBUG - Token span (36, 41): ['Machine', 'learning', 'M', '##L', 'is'] [START] ['a', 'branch', 'of', 'artificial', 'intelligence', 'AI'] [END] ['focused', 'on', 'enabling', 'computers', 'and']
+2025-02-25 10:03:32,335 - backend.services.qa_model_distilbert - INFO - Extracted raw answer: 'a branch of artificial intelligence AI'
+2025-02-25 10:03:32,335 - backend.services.qa_model_distilbert - INFO - Confidence score: 0.6439
+2025-02-25 10:03:32,335 - backend.services.qa_model_distilbert - INFO - Context: 'What is machine learning? Machine learning ML is a branch of artificial intelligence AI focused on enabling computers and machines to imitate'
+2025-02-25 10:03:32,335 - backend.services.qa_model_distilbert - INFO - Final answer: 'a branch of artificial intelligence AI'
+2025-02-25 10:03:32,335 - backend.services.qa_model_distilbert - INFO - Final confidence: 0.8220
+2025-02-25 10:03:32,335 - backend.services.qa_model_distilbert - INFO - ====== END QUESTION ======

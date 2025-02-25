@@ -128,28 +128,59 @@ The React application will start and open in your browser at http://localhost:30
 
 ```
 web-content-qa-tool/
-├── app.py                     # Main Flask application
-├── services/                  # Backend services
-│   ├── __init__.py
-│   ├── extractor.py           # URL content extraction service
-│   ├── processor.py           # Content processing logic
-│   ├── qa_model.py            # TF-IDF question answering logic
-│   └── qa_model_distilbert.py # DistilBERT question answering logic (optional)
-├── frontend/                  # React frontend
+├── backend/
+│   ├── services/                      # Backend services
+│   │   ├── __init__.py
+│   │   ├── extractor.py               # URL content extraction service
+│   │   ├── processor.py               # Content processing logic
+│   │   ├── qa_model.py                # TF-IDF question answering logic
+│   │   └── qa_model_distilbert.py     # DistilBERT question answering logic (optional)
+│   ├── utils/
+│   ├── requirements.txt                # Python dependencies
+│   ├── package.json
+│   ├── package-lock.json
+│   └── .gitignore
+│   
+├── frontend/                          # React frontend
+│   ├── node_modules/
 │   ├── public/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── Header.jsx
 │   │   │   ├── UrlInput.jsx
 │   │   │   ├── QuestionInput.jsx
+│   │   │   ├── QuestionHistory.jsx
 │   │   │   └── Answer.jsx
 │   │   ├── services/
 │   │   │   └── api.js
+│   │   ├── styles/
+│   │   │   └── App.css
 │   │   ├── App.jsx
-│   │   ├── App.css
-│   │   └── index.js
+│   │   ├── App.test.js
+│   │   ├── index.css
+│   │   ├── index.js
+│   │   ├── logo.svg
+│   │   ├── reportWebVitals.js
+│   │   └── setupTests.js
+│   ├── .gitignore
+│   ├── package-lock.json
 │   └── package.json
-└── requirements.txt           # Python dependencies
+│   └── README.md
+│   
+├── node_modules/
+│   
+├── tests/
+│   ├── .gitignore
+│   ├── app.py
+│   ├── basic_requirements.txt
+│   ├── DualApproachSetupInstructions.md
+│   ├── LICENSE
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── README.md
+│   └── test_distilbert.py
+
+``` 
 
 ## Limitations
 
