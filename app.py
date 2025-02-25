@@ -25,6 +25,12 @@ try:
 except ImportError:
     DISTILBERT_AVAILABLE = False
 
+try:
+    from backend.services.qa_model_sentence_transformer import SentenceTransformerQuestionAnsweringModel
+    SENTENCE_TRANSFORMER_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMER_AVAILABLE = False
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -80,6 +86,16 @@ if DISTILBERT_AVAILABLE:
     except Exception as e:
         logger.error(f"Failed to initialize DistilBERT model: {str(e)}")
         distilbert_model = None
+
+# Initialize SentenceTransformer model if available
+sentence_transformer_model = None
+if SENTENCE_TRANSFORMER_AVAILABLE:
+    try:
+        sentence_transformer_model = SentenceTransformerQuestionAnsweringModel()
+        logger.info("SentenceTransformer model initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize SentenceTransformer model: {str(e)}")
+        sentence_transformer_model = None
 
 # In-memory content store (in a real app, consider using a database)
 extracted_content = {}
@@ -137,7 +153,7 @@ def answer_question():
         data = request.json
         question = data.get('question', '')
         urls = data.get('urls', [])
-        model_type = data.get('model_type', 'default')  # 'default', 'tensorflow', 'nltk-advanced', or 'distilbert'
+        model_type = data.get('model_type', 'default')  # 'default', 'tensorflow', 'nltk-advanced', 'distilbert', or 'sentence-transformer'
         
         if not question:
             return jsonify({"error": "No question provided"}), 400
@@ -156,6 +172,9 @@ def answer_question():
             model_type = 'default'
         elif model_type == 'distilbert' and not distilbert_model:
             logger.warning("DistilBERT model requested but not available, falling back to default model")
+            model_type = 'default'
+        elif model_type == 'sentence-transformer' and not sentence_transformer_model:
+            logger.warning("SentenceTransformer model requested but not available, falling back to default model")
             model_type = 'default'
         
         # Combine content from all URLs
@@ -187,6 +206,9 @@ def answer_question():
         elif model_type == 'distilbert' and distilbert_model:
             answer, confidence, context = distilbert_model.answer_question(question, combined_content)
             model_used = 'distilbert'
+        elif model_type == 'sentence-transformer' and sentence_transformer_model:
+            answer, confidence, context = sentence_transformer_model.answer_question(question, combined_content)
+            model_used = 'sentence-transformer'
         else:
             answer, confidence, context = qa_model.answer_question(question, combined_content)
             model_used = 'default'
@@ -225,6 +247,11 @@ def get_available_models():
             "name": "DistilBERT",
             "description": "HuggingFace's DistilBERT model fine-tuned for question answering (resource intensive)",
             "available": distilbert_model is not None
+        },
+        "sentence-transformer": {
+            "name": "Sentence Transformer",
+            "description": "Efficient semantic search using sentence embeddings (moderate resource usage, high accuracy)",
+            "available": sentence_transformer_model is not None
         }
     }
     

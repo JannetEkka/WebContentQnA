@@ -134,7 +134,7 @@ const QuestionInput = ({
                       id={`model-${key}`}
                       value={key}
                       variant={getModelButtonVariant(key)}
-                      disabled={!model.available}
+                      disabled={!model.available}     // Make sure this is correctly checking model.available
                     >
                       {model.name}
                     </ToggleButton>

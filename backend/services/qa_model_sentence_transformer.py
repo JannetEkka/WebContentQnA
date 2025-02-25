@@ -1,5 +1,5 @@
+# Save this as backend/services/qa_model_sentence_transformer.py
 import logging
-import numpy as np
 import re
 from sentence_transformers import SentenceTransformer, util
 import torch

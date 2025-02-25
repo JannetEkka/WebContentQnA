@@ -19,5 +19,12 @@ tensorflow>=2.9.0
 tensorflow-hub>=0.12.0
 tensorflow-text>=2.9.0
 
+# Sentence Transformer model (efficient semantic search)
+sentence-transformers==2.2.2
+
 # Uncomment if you want to try the NLTK-only approach (no TensorFlow required)
 # No additional dependencies needed for NLTK model as nltk is already included above
+
+# Uncomment if you want to use DistilBERT (requires more resources)
+# torch>=2.0.0
+# transformers>=4.30.0

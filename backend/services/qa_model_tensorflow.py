@@ -1,38 +1,33 @@
+# Save this as backend/services/qa_model_tensorflow.py
+# Despite the filename, this is a PyTorch implementation to replace TensorFlow USE
 import logging
 import re
 import numpy as np
-import tensorflow as tf
-import tensorflow_hub as hub
-import tensorflow_text  # Required for BERT preprocessing
+import torch
+from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 class TensorFlowQuestionAnsweringModel:
-    """Answer questions based on content using TensorFlow and Universal Sentence Encoder"""
+    """
+    PyTorch-based implementation to replace TensorFlow Universal Sentence Encoder
+    This provides the same functionality but uses PyTorch and sentence-transformers
+    """
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         
         try:
-            # Set lower memory growth - helps on systems with limited GPU memory
-            gpus = tf.config.experimental.list_physical_devices('GPU')
-            if gpus:
-                for gpu in gpus:
-                    tf.config.experimental.set_memory_growth(gpu, True)
-                self.logger.info(f"Using GPU: {gpus}")
-            else:
-                self.logger.info("Using CPU for TensorFlow")
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            self.logger.info(f"Using device: {self.device}")
             
-            # Load Universal Sentence Encoder (much lighter than BERT-based models)
-            # There are two options:
-            # 1. Universal Sentence Encoder (smaller, faster)
-            # self.model_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
-            # 2. Multilingual Universal Sentence Encoder (slightly larger, supports multiple languages)
-            self.model_url = "https://tfhub.dev/google/universal-sentence-encoder/4"
-            
-            self.model = hub.load(self.model_url)
-            self.logger.info(f"Loaded TensorFlow model: Universal Sentence Encoder")
+            # Use a model similar to Universal Sentence Encoder in capability
+            # all-mpnet-base-v2 is more powerful but slower
+            # all-MiniLM-L6-v2 is faster and uses less memory
+            self.model_name = "all-MiniLM-L6-v2"
+            self.model = SentenceTransformer(self.model_name, device=self.device)
+            self.logger.info(f"Loaded PyTorch Universal Sentence Encoder alternative: {self.model_name}")
         except Exception as e:
-            self.logger.error(f"Error loading TensorFlow model: {str(e)}")
+            self.logger.error(f"Error loading PyTorch model: {str(e)}")
             raise e
     
     def _preprocess_text(self, text):
@@ -42,15 +37,15 @@ class TensorFlowQuestionAnsweringModel:
         return text
     
     def _get_embeddings(self, texts):
-        """Generate embeddings for texts using the Universal Sentence Encoder"""
+        """Generate embeddings for texts using the SentenceTransformer model"""
         # Make sure texts is a list
         if isinstance(texts, str):
             texts = [texts]
         
         # Generate embeddings
-        embeddings = self.model(texts)
+        embeddings = self.model.encode(texts, convert_to_numpy=True)
         
-        return embeddings.numpy()
+        return embeddings
     
     def _split_into_sentences(self, text):
         """Split text into sentences for processing"""
@@ -86,7 +81,7 @@ class TensorFlowQuestionAnsweringModel:
             # Get top-k chunk indices and scores
             top_k = min(top_k, len(chunks))
             top_indices = np.argsort(similarities)[-top_k:][::-1]
-            top_scores = [similarities[i] for i in top_indices]
+            top_scores = [float(similarities[i] for i in top_indices)]
             
             # Get the top chunks
             top_chunks = [chunks[i] for i in top_indices]
@@ -123,7 +118,7 @@ class TensorFlowQuestionAnsweringModel:
             # Get top-5 sentence indices
             top_k = min(5, len(all_sentences))
             top_indices = np.argsort(similarities)[-top_k:][::-1]
-            top_values = [similarities[i] for i in top_indices]
+            top_values = [float(similarities[i] for i in top_indices)]
             
             # Get the top sentences
             top_sentences = [all_sentences[i] for i in top_indices]
@@ -133,13 +128,13 @@ class TensorFlowQuestionAnsweringModel:
             answer = " ".join(answer_sentences)
             
             # Calculate confidence based on similarity scores
-            confidence = top_values[0] if top_values else 0.5
+            confidence = float(top_values[0] if top_values else 0.5)
             
             # Provide wider context
             context_sentences = top_sentences
             context = " ".join(context_sentences)
             
-            return answer, confidence, context
+            return answer, float(confidence), context
             
         except Exception as e:
             self.logger.error(f"Error extracting answer: {str(e)}")
@@ -156,23 +151,32 @@ class TensorFlowQuestionAnsweringModel:
         Returns:
             tuple: (answer, confidence, context)
         """
-        self.logger.info(f"Answering question using TensorFlow USE: {question}")
+        self.logger.info(f"Answering question using PyTorch Universal Sentence Encoder: {question}")
         
-        if not content or not question:
-            return "No content available to answer this question.", 0.0, ""
-        
-        # Preprocess
-        question = self._preprocess_text(question)
-        content = self._preprocess_text(content)
-        
-        # Split content into sentences and then chunks
-        sentences = self._split_into_sentences(content)
-        chunks = self._chunk_sentences(sentences)
-        
-        # Find most relevant chunks
-        top_chunks, top_scores = self._find_most_relevant_chunks(question, chunks)
-        
-        # Extract answer from the most relevant chunks
-        answer, confidence, context = self._extract_answer(question, top_chunks, top_scores)
-        
-        return answer, confidence, context
+        try:
+            if not content or not question:
+                return "No content available to answer this question.", 0.0, ""
+            
+            # Preprocess
+            question = self._preprocess_text(question)
+            content = self._preprocess_text(content)
+            
+            # Split content into sentences and then chunks
+            sentences = self._split_into_sentences(content)
+            chunks = self._chunk_sentences(sentences)
+            
+            # Find most relevant chunks
+            top_chunks, top_scores = self._find_most_relevant_chunks(question, chunks)
+            
+            # Extract answer from the most relevant chunks
+            answer, confidence, context = self._extract_answer(question, top_chunks, top_scores)
+            
+            # Ensure all returned values are JSON serializable
+            confidence = float(confidence)
+            
+            return answer, confidence, context
+                
+        except Exception as e:
+            self.logger.error(f"Error answering question: {str(e)}", exc_info=True)
+            # Return a safe fallback answer
+            return "Sorry, I couldn't process that question with this model. Try using a different model.", 0.0, ""
